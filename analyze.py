@@ -13,24 +13,31 @@ Author: Anisha Iyer
 """
 
 # TODO: get all CSVs from all folders, start with prototype code for 1 CSV
+#data = pd.read_csv("30-60.csv")
 
 # TODO: make more streamlineable
-data = pd.read_csv("30-60.csv")
-print(data.head())
+def eda(data_arg):
+    global data
+    data = data_arg
+    print(data.head())
 
-# EXPLORATORY DATA ANALYSIS:
-FAU_NAMES = data.columns[3:7]
-CONF_NAMES = data.columns[10:14]
+    # EXPLORATORY DATA ANALYSIS:
+    global FAU_NAMES
+    FAU_NAMES = data.columns[3:7]
 
-# have user input viable indices where bounding boxes are accurate
-viables = [11, 24, 25]
-faus = data.loc[viables, FAU_NAMES]
-fau_arr = np.asarray(faus)
-confs = data.loc[viables, CONF_NAMES]
-conf_arr = np.asarray(confs)
+    global CONF_NAMES
+    CONF_NAMES = data.columns[10:14]
 
-clean_data = faus.join(confs)
-print("lean data matrix: ", clean_data)
+    # have user input viable indices where bounding boxes are accurate
+    viables = [11, 24, 25]
+    faus = data.loc[viables, FAU_NAMES]
+    fau_arr = np.asarray(faus)
+    confs = data.loc[viables, CONF_NAMES]
+    conf_arr = np.asarray(confs)
+
+    global clean_data
+    clean_data = faus.join(confs)
+    print("lean data matrix: ", clean_data)
 
 def get_all_fau_scores(data):
     """
@@ -127,3 +134,26 @@ def get_fau_scores(viables, fau, conf):
     
     print(fau_mgs)
     return NotImplemented
+
+def get_clean_rows(temp):
+    """
+        Get clean data per row after filtering for high confidence rows only.
+        
+        Filter for rows that correspond to high average confidence value across Facial Action Units.
+        Returns a dictionary with viable FAU scores at timepoints of accurate bounding box classification and high confidence scores across facial action units.
+    """
+    THRESHOLD = 0.90
+    
+    # insert new column with average confidence value
+    if "Avg Confidence" in temp.columns.values:
+        temp = temp.drop(columns=['Avg Confidence'])
+    temp.insert(len(temp.columns), "Avg Confidence", np.mean(np.asarray(temp.loc[:, CONF_NAMES]), axis=1))
+    filtered = temp.sort_values(by='Avg Confidence', ascending=False)
+    fau = filtered.loc[:, FAU_NAMES]
+    conf = filtered.loc[:, CONF_NAMES]
+    avg = filtered.loc[:, 'Avg Confidence']
+    filtered = fau.join(avg)
+    # join confidence columns as well
+    #filtered = fau.join(avg).join(conf)
+    
+    return filtered
