@@ -29,7 +29,8 @@ def eda(data_arg):
     CONF_NAMES = data.columns[10:14]
 
     # have user input viable indices where bounding boxes are accurate
-    viables = [11, 24, 25]
+    data_arg = [11, 24, 25]
+    viables = viables
     faus = data.loc[viables, FAU_NAMES]
     fau_arr = np.asarray(faus)
     confs = data.loc[viables, CONF_NAMES]

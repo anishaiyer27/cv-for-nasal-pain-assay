@@ -10,7 +10,7 @@ Author: Anisha Iyer
 from moviepy.video.io.ffmpeg_tools import ffmpeg_extract_subclip
 
 filename = "MOUSE_A.MP4" # hardcoded filename with current behavior video file (temporarily)
-file_loc = "Documents/Anisha/"
+file_loc = "Documents/Anisha/" # hardcoded filepath
 
 ## get duration of video in seconds via:
 
