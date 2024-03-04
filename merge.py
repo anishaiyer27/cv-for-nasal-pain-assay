@@ -1,10 +1,10 @@
 """
 merge.py
 
-Functions to merge data from multiple folders containing a JSON and and a CSV with metadata and scores over timestamps.
-Overcome need to manually click through multiple folders by retrieving data automatically across many folders.
+Produce one CSV from all 30 CSVs from interval analysis.
 
-Merge CSVs into one CSV with cumulatively adjusted timestamps
+Functions to merge data from multiple folders containing a JSON and and a CSV with metadata and scores over timestamps.
+Overcome need to manually click through multiple folders by retrieving data automatically across many folders. Merge CSVs into one CSV with cumulatively adjusted timestamps.
 
 Author: Anisha Iyer
 """
@@ -13,11 +13,16 @@ import pandas as pd
 import numpy as np
 import glob
 
-# os path
-
-# find all csv files in directory
-def read_files(root):
+def read_files(root, out_name):
+    os.chdir(root)
     csv_files = glob.glob('*.csv')
+    csv_files = sorted(list(csv_files))
+    
+    # only includes data csv files named based on starting second to ending second naming system
+    # does not remerge finished csv with original data files if this is run twice
+    csv_files = [f for f in csv_files if f[:1].isdigit()]
+    print(csv_files)
+    
     global data
     data = pd.DataFrame()
 
@@ -32,12 +37,14 @@ def read_files(root):
         i += 1
         
     data.index = pd.Index(range(len(data.index)))
+    output = out_name + '.csv'
+    data.to_csv(output)
 
-# update index and timestamps
 def adjust_indices(df, ts, frame):
     df.loc[:, "Frame Index"] = df.loc[:, "Frame Index"].values + frame
     df.loc[:, "Timestamp(x)"] = df.loc[:, "Timestamp(x)"].values + ts
     return df, ts+30, frame+7200
+
 
 # TODO: merge all of them but separate across before and after treatment
 
