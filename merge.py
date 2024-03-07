@@ -11,9 +11,9 @@ Author: Anisha Iyer
 
 import pandas as pd
 import numpy as np
-import glob
+import glob, os
 
-def read_files(root, out_name):
+def read_files(root, mouse):
     os.chdir(root)
     csv_files = glob.glob('*.csv')
     csv_files = sorted(list(csv_files))
@@ -21,7 +21,6 @@ def read_files(root, out_name):
     # only includes data csv files named based on starting second to ending second naming system
     # does not remerge finished csv with original data files if this is run twice
     csv_files = [f for f in csv_files if f[:1].isdigit()]
-    print(csv_files)
     
     global data
     data = pd.DataFrame()
@@ -37,17 +36,54 @@ def read_files(root, out_name):
         i += 1
         
     data.index = pd.Index(range(len(data.index)))
-    output = out_name + '.csv'
-    data.to_csv(output)
 
 def adjust_indices(df, ts, frame):
     df.loc[:, "Frame Index"] = df.loc[:, "Frame Index"].values + frame
     df.loc[:, "Timestamp(x)"] = df.loc[:, "Timestamp(x)"].values + ts
     return df, ts+30, frame+7200
 
+def save_full_csv(root, mouse):
+    os.chdir(root)
+    output = mouse + '.csv'
+    data.to_csv(output)
 
-# TODO: merge all of them but separate across before and after treatment
+
+# merge all of them but separate across before and after treatment given timestamps for split
+    
+def save_ctrl_vs_treated(root, mouse, st, click):
+    os.chdir(root)
+    before = mouse + '_control.csv'
+    after = mouse + '_treated.csv'
+    st = float(str(st).zfill(3))
+    click = float(str(click).zfill(3))
+    ctrl = data.loc[data["Timestamp(x)"] <= st] # split across before and after
+    treated = data.loc[data["Timestamp(x)"] >= click]
+    ctrl.to_csv(before)
+    treated.to_csv(after)
+
+
+# merge all of them but separate across before and after treatment given vid # and frame #s
+
+def save_ctrl_vs_treated2(root, mouse, vid1, frame_st, vid2, frame_click,):
+    """
+        Alternate helper method which reads in user friendly inputs. Get index numbers
+        and starting times of filenames from PainFace.
+    """
+    os.chdir(root)
+    before = mouse + '_control.csv'
+    after = mouse + '_treated.csv'
+    #vid1 = 
+    ctrl = data.loc[data["Frame Index"] <= frame_st+vid1*240] # split across before and after
+    treated = data.loc[data["Timestamp(x)"] >= after]
+    ctrl.to_csv(before)
+    treated.to_csv(after)
+    # method is untested
+    return NotImplementedError
 
 if __name__=="__main__":
-    read_files(None)
+    cwd = os.getcwd()
+    print(cwd)
+    read_files(cwd, 'MOUSE_A')
+    save_full_csv(cwd, 'MOUSE_A')
+    save_ctrl_vs_treated(cwd, 'MOUSE_A', 170, 240)
     data
