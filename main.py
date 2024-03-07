@@ -4,7 +4,7 @@ from merge import *
 
 # make more user friendly by reading in args (eventually)
 # find a user friendly way to indicate viable frames after visual inspection if combining all csvs into 1 csv
-data = pd.read_csv("30-60.csv")
+data = pd.read_csv("MOUSE_A.csv")
 
 # exploratory data analysis
 eda(data)

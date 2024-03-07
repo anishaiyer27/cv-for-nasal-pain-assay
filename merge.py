@@ -64,7 +64,7 @@ def save_ctrl_vs_treated(root, mouse, st, click):
 
 # merge all of them but separate across before and after treatment given vid # and frame #s
 
-def save_ctrl_vs_treated2(root, mouse, vid1, frame_st, vid2, frame_click,):
+def save_ctrl_vs_treated2(root, mouse, vid1, frame_st, vid2, frame_click):
     """
         Alternate helper method which reads in user friendly inputs. Get index numbers
         and starting times of filenames from PainFace.
@@ -74,7 +74,7 @@ def save_ctrl_vs_treated2(root, mouse, vid1, frame_st, vid2, frame_click,):
     after = mouse + '_treated.csv'
     #vid1 = 
     ctrl = data.loc[data["Frame Index"] <= frame_st+vid1*240] # split across before and after
-    treated = data.loc[data["Timestamp(x)"] >= after]
+    treated = data.loc[data["Frame Index"] >= frame_click+vid2*240]
     ctrl.to_csv(before)
     treated.to_csv(after)
     # method is untested

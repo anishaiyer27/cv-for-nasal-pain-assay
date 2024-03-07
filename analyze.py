@@ -17,6 +17,20 @@ Author: Anisha Iyer
 
 # TODO: make more streamlineable
 def eda(data_arg):
+    """
+        Prints first five rows of data matrix. Processes arguments.
+        Cleans data matrix for only MGS scores and confidences for user-specified frames only.
+
+        Parameters:
+            - "data_arg": list containing frame indices of interest
+                - switch to trad args object
+        
+        Allocates:
+            - global "data": stores data in global "data" variable
+            - global "clean_data": cleans data and stores lean dataset in global "clean_data" variable
+                - contains only MGS scores for each FAU and Confidences for each FAU score
+                - columns 3-7 and 10-14 from full dataset ("data")
+    """
     global data
     data = data_arg
     print(data.head())
@@ -40,11 +54,48 @@ def eda(data_arg):
     clean_data = faus.join(confs)
     print("lean data matrix: ", clean_data)
 
-def get_all_fau_scores(data):
+def viables_by_confidence():
+    """
+        Sorts clean dataset by Get clean data per FAU after filtering for high confidence scores only.
+        
+        For each Facial Action Unit, filter for datapoints that correspond to high confidence values.
+        
+        Returns 3 dictionaries with:
+            - Faus: data arrays with all high confidence scores organized by FAU identity
+            - Times: label arrays containing timestamp identity for each included confidence score per FAU
+            - Scores sorted: dataframes containing all FAU scores sorted by confidence across each individual column
+    """
+    THRESHOLD = 0.90
+    
+    faus = {}
+    fs_sorted = {}
+    times = {}
+    
+    for i in range(len(FAU_NAMES)):
+        fau = FAU_NAMES[i]
+        conf = CONF_NAMES[i]
+        
+        # data for this FAU where confidence of FAU score >= threshold
+        mgs = clean_data[fau].where(clean_data[conf] >= THRESHOLD).dropna()
+        # sort in order of greatest confidence (high confidence to low confidence)
+        mgs_sorted = clean_data.sort_values(conf, ascending=False)[fau]
+        sorted_arrs = np.asarray(mgs_sorted)
+        faus[fau] = np.asarray(mgs)
+        times[fau] = mgs.index
+        fs_sorted[fau] = sorted_arrs
+    
+    return faus, times, fs_sorted
+
+def get_all_fau_scores(): 
     """
         Get data per FAU without filtering for manually confirmed bounding box accuracy.
         Run the same analytics as with clean data on all timestamps of the data matrix without checking
         whether the bounding boxes were correctly identified at those points.
+
+        Returns:
+            - "faus": dictionary of MGS scores for each FAU after filtering for high confidence scores only
+            - "times": corresponding times in the video for each datapoint in FAUs values
+            - "fs_sorted": same as FAUs except in order of confidence (high to low) and without dropping low confidence scores
     """
     
     THRESHOLD = 0.90
@@ -64,36 +115,6 @@ def get_all_fau_scores(data):
         #print(mgs_sorted, "\n")
         faus[fau] = np.asarray(mgs)
         print("index", mgs.index, "\n")
-        times[fau] = mgs.index
-        fs_sorted[fau] = sorted_arrs
-    
-    return faus, times, fs_sorted
-
-def get_clean_fau_analytics():
-    """
-        Get clean data per FAU after filtering for high confidence scores only.
-        
-        For each Facial Action Unit, filter for datapoints that correspond to high confidence values.
-        
-        Returns 3 dictionaries with:
-            - Faus: data arrays with all high confidence scores organized by FAU identity
-            - Times: label arrays containing timestamp identity for each included confidence score per FAU
-            - Scores sorted: dataframes containing all FAU scores sorted by confidence across each individual column
-    """
-    THRESHOLD = 0.90
-    
-    faus = {}
-    fs_sorted = {}
-    times = {}
-    
-    for i in range(len(FAU_NAMES)):
-        fau = FAU_NAMES[i]
-        conf = CONF_NAMES[i]
-        
-        mgs = clean_data[fau].where(clean_data[conf] >= THRESHOLD).dropna()
-        mgs_sorted = clean_data.sort_values(conf, ascending=False)[fau]
-        sorted_arrs = np.asarray(mgs_sorted)
-        faus[fau] = np.asarray(mgs)
         times[fau] = mgs.index
         fs_sorted[fau] = sorted_arrs
     
@@ -121,7 +142,7 @@ def get_fau_scores(viables, fau, conf):
         IGNORE. not pursuing this anymore.
     """
     THRESHOLD = 0.90
-    
+    """
     fau_mgs = {}
     for fau in FAU_NAMES:
         fau_mgs[str(fau)] = []
@@ -134,14 +155,27 @@ def get_fau_scores(viables, fau, conf):
                 #fau_mgs[list(fau_mgs.keys())[fi]].append(fau[v][fi])
     
     print(fau_mgs)
+    """
     return NotImplemented
 
-def get_clean_rows(temp):
+def get_clean_rows(temp, show_all_confidences=False):
     """
-        Get clean data per row after filtering for high confidence rows only.
-        
-        Filter for rows that correspond to high average confidence value across Facial Action Units.
-        Returns a dictionary with viable FAU scores at timepoints of accurate bounding box classification and high confidence scores across facial action units.
+        For each frame, computes average confidence over all FAU scores. Adds a column for average confidence values
+        and sorts data from high average confidence to low average confidence.
+
+        Parameters:
+            - "temp": any dataframe, doesn't need to be global data variable (can pass in full dataset or clean_data with viables only)
+
+        Returns:
+            - "filtered": 
+
+            
+        Original Description:
+            Get clean data per row after filtering for high confidence rows only.
+            Filter for rows that correspond to high average confidence value across Facial Action Units.
+            Returns a dictionary with viable FAU scores at timepoints of accurate bounding box classification and high confidence scores across facial action units.
+
+        Filtering not implemented in this function
     """
     THRESHOLD = 0.90
     
@@ -149,12 +183,18 @@ def get_clean_rows(temp):
     if "Avg Confidence" in temp.columns.values:
         temp = temp.drop(columns=['Avg Confidence'])
     temp.insert(len(temp.columns), "Avg Confidence", np.mean(np.asarray(temp.loc[:, CONF_NAMES]), axis=1))
+
+    # this sorts by average confidence, but doesn't filter by anything or remove any rows
     filtered = temp.sort_values(by='Avg Confidence', ascending=False)
     fau = filtered.loc[:, FAU_NAMES]
     conf = filtered.loc[:, CONF_NAMES]
     avg = filtered.loc[:, 'Avg Confidence']
     filtered = fau.join(avg)
-    # join confidence columns as well
-    #filtered = fau.join(avg).join(conf)
+
+    # join confidence columns back as well
+    if show_all_confidences:
+        filtered = fau.join(avg).join(conf)
     
     return filtered
+    
+# get_clean_rows(data)
