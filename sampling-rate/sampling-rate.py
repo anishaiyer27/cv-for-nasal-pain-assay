@@ -3,25 +3,47 @@ sampling-rate.py
 
 Single-use script to plot viable frame counts over each 30 second interval video clip.
 
+Decided to log this in a spreadsheet. After logging this data, use this script to analyze and plot it.
+
 Author: Anisha Iyer
 """
 
-# manual viables information:
-viables = {}
+import pandas as pd
+import matplotlib.pyplot as plt
 
-# fills up viables dictionary with keys of first rounded timepoint of that video's starting point
-st = 0
-for _ in range(30):
-    viables[st] = []
-    st += 30
+csv = pd.read_csv("mouse_a_viables.csv")
 
+def clean_viables(csv):
+    csv.columns = csv.loc[4]
+    csv = csv.drop(list(range(5)))
+    csv.index = pd.Index(range(len(csv.index)))
+    csv = csv.drop(columns=['Clip number'])
+    return csv
 
-# TODO: finish for the rest of them
-viables[0] = [9] # barely
-# 30 - 60:
-viables[30] = [11, 24, 25]
+def to_dict(csv, fau_names):
+    arrs = dict(csv)
+    for k in fau_names:
+        arrs[k] = dict(arrs[k].dropna())
+        for i in arrs[k].keys():
+            vals = arrs[k][i].split(',')
+            #temp = []
+            #for v in vals:
+                #if v.isdigit():
+                    #temp.append(int(v))
+            vals = [int(v) for v in vals]
+            arrs[k][i] = vals
+    return arrs
 
-# 60 - 90: 19 ears only, 21 1 ear only, 
-viables[60] = [0, 2, 3, 4, 5, 6, 13, 14, 15, 16, 19, 21, 22, 23, 26]
+clean = clean_viables(csv)
+faus = ['Orbital 1', 'Orbital 2', 'Nose', 'Whiskers', 'Ear 1', 'Ear 2']
+arrs = to_dict(clean,faus)
 
-print(viables)
+for f in faus:
+    d = arrs[f]
+    counts = [len(v) for v in d.values()]
+    plt.title(f)
+    plt.xlim(0, 15)
+    plt.ylim(0, 30)
+    plt.bar(d.keys(), counts)
+    plt.show()
+    plt.savefig(f+'.png')
