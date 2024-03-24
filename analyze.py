@@ -16,7 +16,7 @@ Author: Anisha Iyer
 #data = pd.read_csv("30-60.csv")
 
 # TODO: make more streamlineable
-def eda(data_arg):
+def eda(dataset, viables):
     """
         Prints first five rows of data matrix. Processes arguments.
         Cleans data matrix for only MGS scores and confidences for user-specified frames only.
@@ -32,7 +32,7 @@ def eda(data_arg):
                 - columns 3-7 and 10-14 from full dataset ("data")
     """
     global data
-    data = data_arg
+    data = dataset
     print(data.head())
 
     # EXPLORATORY DATA ANALYSIS:
@@ -44,15 +44,65 @@ def eda(data_arg):
 
     # have user input viable indices where bounding boxes are accurate
     data_arg = [11, 24, 25]
-    viables = viables
-    faus = data.loc[viables, FAU_NAMES]
-    fau_arr = np.asarray(faus)
-    confs = data.loc[viables, CONF_NAMES]
-    conf_arr = np.asarray(confs)
+    # helper function to get viables
 
+    get_viable_rows(viables)
+    print("clean data: ", clean_data)
+    
+
+def get_viable_rows(viables, type=1):
+    """
+        Helper function to clean dataframe of rows with poorly classified bounding boxes or other
+        foundational inaccuracies. Processes viable dict argument and selects only for specified
+        frames.
+
+        Sets global clean_data variable.
+    """
     global clean_data
-    clean_data = faus.join(confs)
-    print("lean data matrix: ", clean_data)
+    clean_data = None
+    if not type: # if existing viable indices list provides final lists of viable indices for each clip 
+        inner = viables['Viable indices']
+        temp = []
+        for clip in inner.keys():
+            frames = inner[clip]
+            adder = [clip*30]*len(frames)
+            temp.extend(adder + frames)
+        viables_lst = temp
+
+        faus = data.loc[viables_lst, FAU_NAMES]
+        fau_arr = np.asarray(faus)
+        confs = data.loc[viables_lst, CONF_NAMES]
+        conf_arr = np.asarray(confs)
+
+        clean_data = faus.join(confs)
+    elif type==1:
+        clean_viable_dict = {}
+        min = 100000
+        max = -1
+        for fau in FAU_NAMES:
+            clean_viable_dict[fau] = []
+            for clip in fau.keys():
+                frames = inner[clip]
+                if min > min(inner[clip]):
+                    min = min(inner[clip])
+                if max < max(inner[clip]):
+                    max = max(inner[clip])
+                adder = [clip*30]*len(frames)
+                clean_viable_dict[fau].extend(adder + frames)
+        
+        #max_length = max([len(clean_viable_dict[fau]) for fau in FAU_NAMES])
+        domain = range(min, max+1)
+
+        columns = list(FAU_NAMES).extend(CONF_NAMES)
+        for c in columns:
+            if not clean_data:
+                clean_data.join(data.loc[domain, c])
+            # for each fau, make the non-viable values null and also make corresponding confs null
+            clean_data.join(data.loc[domain, c])
+        
+        for c in range(len(CONF_NAMES)):
+            clean_data.join(data.loc[clean_viable_dict[FAU_NAMES[c], CONF_NAMES[c]]])
+
 
 def viables_by_confidence():
     """
