@@ -101,14 +101,14 @@ def set_clean_data(viables, type=1):
         columns = list(FAU_NAMES)
         columns.extend(CONF_NAMES)
 
-        print(data.columns, "alsdkjflkdj")
+        print(data.columns)
         
         for c in columns:
             if columns.index(c) < len(columns)//2:
                 this_fau = c
             else:
-                print("\n\n",columns.index(c))
-                this_fau = list(data.columns)[columns.index(c)]
+                print(columns, "\n\n",columns.index(c))
+                this_fau = columns[columns.index(c)-len(columns)//2]
             print("c: ", c, " this fau: ", this_fau)
 
             print("does clean_data exist yet?")
@@ -132,7 +132,7 @@ def set_clean_data(viables, type=1):
         
         #for c in range(len(CONF_NAMES)):
         #    clean_data.join(data.loc[clean_viable_dict[FAU_NAMES[c], CONF_NAMES[c]]])
-    pd.save_csv('MOUSE_A_clean.csv')
+    clean_data.to_csv('MOUSE_A_clean.csv')
 
 
 def viables_by_confidence():
