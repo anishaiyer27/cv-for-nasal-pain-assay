@@ -12,7 +12,6 @@ Later, this functionality will move to clean_results.py and will work across mul
 Author: Anisha Iyer
 """
 
-# TODO: get all CSVs from all folders, start with prototype code for 1 CSV
 #data = pd.read_csv("30-60.csv")
 
 # TODO: make more streamlineable
@@ -33,24 +32,26 @@ def eda(dataset, viables):
     """
     global data
     data = dataset
-    print(data.head())
+    print("First five rows of PainFace CSV: \n", data.head())
 
     # EXPLORATORY DATA ANALYSIS:
     global FAU_NAMES
-    FAU_NAMES = data.columns[3:7]
+    print(data.columns, "\n\n\n")
+    FAU_NAMES = data.columns[5:9]
+    print(FAU_NAMES, "\n\n\n")
 
     global CONF_NAMES
-    CONF_NAMES = data.columns[10:14]
+    CONF_NAMES = data.columns[12:16]
+    print(CONF_NAMES, "\n\n\n")
 
     # have user input viable indices where bounding boxes are accurate
     data_arg = [11, 24, 25]
     # helper function to get viables
-
-    get_viable_rows(viables)
-    print("clean data: ", clean_data)
+    set_clean_data(viables, type=1)
+    print("\n\n\nCLEAN DATA:\n\n\n", clean_data)
     
 
-def get_viable_rows(viables, type=1):
+def set_clean_data(viables, type=1):
     """
         Helper function to clean dataframe of rows with poorly classified bounding boxes or other
         foundational inaccuracies. Processes viable dict argument and selects only for specified
@@ -59,7 +60,7 @@ def get_viable_rows(viables, type=1):
         Sets global clean_data variable.
     """
     global clean_data
-    clean_data = None
+    clean_data = pd.DataFrame()
     if not type: # if existing viable indices list provides final lists of viable indices for each clip 
         inner = viables['Viable indices']
         temp = []
@@ -77,31 +78,61 @@ def get_viable_rows(viables, type=1):
         clean_data = faus.join(confs)
     elif type==1:
         clean_viable_dict = {}
-        min = 100000
-        max = -1
+        minF = 100000
+        maxF = -1
         for fau in FAU_NAMES:
+            print('fau: ',fau)
+            print('\n\n\nviables keys:', viables.keys())
+            scnd_index = [v for v in viables.keys() if fau in v][-1]
+            inner = viables[scnd_index]
             clean_viable_dict[fau] = []
-            for clip in fau.keys():
+            for clip in inner.keys():
                 frames = inner[clip]
-                if min > min(inner[clip]):
-                    min = min(inner[clip])
-                if max < max(inner[clip]):
-                    max = max(inner[clip])
-                adder = [clip*30]*len(frames)
-                clean_viable_dict[fau].extend(adder + frames)
+                frames = [clip*30 + f for f in frames]
+                clean_viable_dict[fau].extend(frames)
+            minF = min(clean_viable_dict.values())[0]
+            maxF = max([v[-1] for v in clean_viable_dict.values()])
         
         #max_length = max([len(clean_viable_dict[fau]) for fau in FAU_NAMES])
-        domain = range(min, max+1)
+        print(minF, ", ", maxF)
+        domain = list(range(minF, maxF+1))
+        print("domain: ", domain)
 
-        columns = list(FAU_NAMES).extend(CONF_NAMES)
-        for c in columns:
-            if not clean_data:
-                clean_data.join(data.loc[domain, c])
-            # for each fau, make the non-viable values null and also make corresponding confs null
-            clean_data.join(data.loc[domain, c])
+        columns = list(FAU_NAMES)
+        columns.extend(CONF_NAMES)
+
+        print(data.columns, "alsdkjflkdj")
         
-        for c in range(len(CONF_NAMES)):
-            clean_data.join(data.loc[clean_viable_dict[FAU_NAMES[c], CONF_NAMES[c]]])
+        for c in columns:
+            if columns.index(c) < len(columns)//2:
+                this_fau = c
+            else:
+                print("\n\n",columns.index(c))
+                this_fau = list(data.columns)[columns.index(c)]
+            print("c: ", c, " this fau: ", this_fau)
+
+            print("does clean_data exist yet?")
+            
+            if clean_data.empty:
+                clean_data = data.loc[domain, c].to_frame()
+            else:
+                clean_data.join(data.loc[domain, c])
+            print("now yes")
+            print(domain)
+            print("remove: ", clean_viable_dict[this_fau])
+            # for each fau, make the non-viable values null and also make corresponding confs null
+            nulls = list(domain)
+            print("nulls:", nulls)
+            for f in clean_viable_dict[this_fau]:
+                #print(f)
+                nulls.remove(f)
+            print(list(clean_data.axes))
+            clean_data.loc[nulls, c] = np.nan
+            print(clean_data)
+        
+        #for c in range(len(CONF_NAMES)):
+        #    clean_data.join(data.loc[clean_viable_dict[FAU_NAMES[c], CONF_NAMES[c]]])
+    pd.save_csv('MOUSE_A_clean.csv')
 
 
 def viables_by_confidence():

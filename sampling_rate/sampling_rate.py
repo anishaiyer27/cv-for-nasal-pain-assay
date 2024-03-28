@@ -10,11 +10,13 @@ Author: Anisha Iyer
 
 import pandas as pd
 import matplotlib.pyplot as plt
+import os
 
+print(os.getcwd())
+csv = pd.read_csv('sampling_rate/mouse_a_viables.csv')
 
-csv = pd.read_csv("sampling-rate/mouse_a_viables.csv")
 global faus
-faus = ['Orbital 1', 'Orbital 2', 'Nose', 'Whiskers', 'Ear 1', 'Ear 2']
+faus = ['Orbital 1', 'Orbital 2', 'Nose', 'Whiskers', 'Ears 1', 'Ears 2']
 
 def clean_viables(csv):
     csv.columns = csv.loc[4]
