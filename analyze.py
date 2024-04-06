@@ -15,7 +15,7 @@ Author: Anisha Iyer
 #data = pd.read_csv("30-60.csv")
 
 # TODO: make more streamlineable
-def eda(dataset, viables):
+def eda(dataset, viables=None):
     """
         Prints first five rows of data matrix. Processes arguments.
         Cleans data matrix for only MGS scores and confidences for user-specified frames only.
@@ -23,6 +23,7 @@ def eda(dataset, viables):
         Parameters:
             - "data_arg": list containing frame indices of interest
                 - switch to trad args object
+            - "viables": 
         
         Allocates:
             - global "data": stores data in global "data" variable
@@ -47,11 +48,11 @@ def eda(dataset, viables):
     # have user input viable indices where bounding boxes are accurate
     data_arg = [11, 24, 25]
     # helper function to get viables
-    set_clean_data(viables, type=1)
+    set_clean_data(viables=viables, type=1)
     print("\n\n\nCLEAN DATA:\n\n\n", clean_data)
     
 
-def set_clean_data(viables, type=1):
+def set_clean_data(viables=None, type=1):
     """
         Helper function to clean dataframe of rows with poorly classified bounding boxes or other
         foundational inaccuracies. Processes viable dict argument and selects only for specified
@@ -77,21 +78,63 @@ def set_clean_data(viables, type=1):
 
         clean_data = faus.join(confs)
     elif type==1:
-        clean_viable_dict = {}
+        copy = data.copy()
+
+        labels = list(viables.keys())[:-1]
+        print([l for l in labels if '2' in l])
+        for l in labels:
+            if '1' in l:
+                labels.remove(l)
+                print("check remove 1. labels: ", labels)
+            elif '2' in l:
+                print("ASLFLSKJDFKL")
+                print(labels[labels.index(l)])
+                print(l[:-2])
+                i = labels.index(l)
+                labels[i] = labels[i][:-2]
+                print("check remove 2: ", labels[i])
+        print("check that labels match fau_names: ", labels, " \n", FAU_NAMES)
+        nan_lsts = {}
+        for f in labels:
+            inner = viables[f]
+            non_nans = []
+            for clip in inner:
+                frames = inner[clip]
+                adder = [clip*30]*len(frames)
+                ixs = frames+adder
+                print(ixs)
+                non_nans.extend(ixs)
+                print(non_nans)
+            temp = list(range(data.shape[0]))
+            for nn in non_nans:
+                print(nn)
+                temp.remove(nn)
+            nan_lsts[f] = temp
+            copy[nan_lsts[f]][f] = np.Nan
+        
+        faus = copy.loc[:, FAU_NAMES]
+        confs = copy.loc[:, CONF_NAMES]
+
+        clean_data = faus.join(confs)
+    print(clean_data)
+
+def temp_spot(viables):
+        csv_viable_lsts = {}
         minF = 100000
         maxF = -1
-        for fau in FAU_NAMES:
-            print('fau: ',fau)
+        viables_keys = viables.keys()[:len(viables.keys)-1]
+        for f in viables_keys:
+            print('fau: ',f)
             print('\n\n\nviables keys:', viables.keys())
-            scnd_index = [v for v in viables.keys() if fau in v][-1]
+            scnd_index = [v for v in viables.keys() if f in v][-1]
             inner = viables[scnd_index]
-            clean_viable_dict[fau] = []
+            csv_viable_lsts[f] = []
             for clip in inner.keys():
                 frames = inner[clip]
                 frames = [clip*30 + f for f in frames]
-                clean_viable_dict[fau].extend(frames)
-            minF = min(clean_viable_dict.values())[0]
-            maxF = max([v[-1] for v in clean_viable_dict.values()])
+                csv_viable_lsts[f].extend(frames)
+            minF = min(csv_viable_lsts.values())[0]
+            maxF = max([v[-1] for v in csv_viable_lsts.values()])
         
         #max_length = max([len(clean_viable_dict[fau]) for fau in FAU_NAMES])
         print(minF, ", ", maxF)
@@ -119,21 +162,21 @@ def set_clean_data(viables, type=1):
                 clean_data.join(data.loc[domain, c])
             print("now yes")
             print(domain)
-            print("remove: ", clean_viable_dict[this_fau])
+            #uncomment print("remove: ", clean_viable_dict[this_fau])
             # for each fau, make the non-viable values null and also make corresponding confs null
             nulls = list(domain)
             print("nulls:", nulls)
-            for f in clean_viable_dict[this_fau]:
+            # uncomment for f in clean_viable_dict[this_fau]:
                 #print(f)
-                nulls.remove(f)
+            # uncomment    nulls.remove(f)
             print(list(clean_data.axes))
             clean_data.loc[nulls, c] = np.nan
             print(clean_data)
         
         #for c in range(len(CONF_NAMES)):
         #    clean_data.join(data.loc[clean_viable_dict[FAU_NAMES[c], CONF_NAMES[c]]])
-    clean_data.to_csv('MOUSE_A_clean.csv')
-
+        clean_data.to_csv('MOUSE_A_clean.csv')
+    
 
 def viables_by_confidence():
     """

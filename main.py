@@ -12,7 +12,7 @@ viables = sr.execute()
 print(viables)
 
 # exploratory data analysis
-eda(data, viables)
+eda(data, viables=viables)
 
 
 # get high confidence scores per fau, corresponding timestamps, and overall sorted clean data matrix
