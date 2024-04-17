@@ -19,7 +19,6 @@ duration = video.duration
 segment_duration = 30
 
 num_segments = int(duration // segment_duration)
-print(duration, num_segments)
 
 for i in range(num_segments):
     start_time = i * segment_duration
