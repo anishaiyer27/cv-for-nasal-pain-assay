@@ -34,7 +34,7 @@ duration = video.duration
 
 segment_duration = 30
 
-num_segments = int(duration // segment_duration)
+num_segments = int(duration // segment_duration) + 1
 
 #inner_path = file_loc + "clips/"
 
