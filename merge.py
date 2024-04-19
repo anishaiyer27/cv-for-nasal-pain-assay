@@ -11,11 +11,11 @@ Author: Anisha Iyer
 
 import pandas as pd
 import numpy as np
-import glob, os, argparse
+import glob, os, argparse, sys
 
 def read_files(root, mouse):
     os.chdir(root)
-    csv_files = glob.glob('*'+mouse+'.csv')
+    csv_files = glob.glob('*'+mouse+'*.csv')
     csv_files = sorted(list(csv_files))
     
     # only includes data csv files named based on starting second to ending second naming system
@@ -28,14 +28,19 @@ def read_files(root, mouse):
     i=0
     last_ts = 0
     last_frame = 0
+    expected_length = 0
     for f in csv_files:
         df = pd.read_csv(f)
+        print("read ", f, " as csv")
         df, last_ts, last_frame = adjust_indices(df, last_ts, last_frame)
+        expected_length += len(df.index.values)
         df.insert(0, "Interval", len(df.index.values)*["Clip " + str(i+1) + ": " + str(f)][:3])
         data = pd.concat([data, df])
         i += 1
         
     data.index = pd.Index(range(len(data.index)))
+    print("expected length", expected_length)
+    print("actual length", len(data.index.values))
 
 def adjust_indices(df, ts, frame):
     df.loc[:, "Frame Index"] = df.loc[:, "Frame Index"].values + frame
@@ -89,7 +94,11 @@ if __name__=="__main__":
     parser.add_argument("mouse_out", help="End time of pre-treatment section. Time in seconds when mouse is removed", type=int)
     parser.add_argument("mouse_return", help="Start of post-treatment section at time of click of chamber lid. Time in seconds when mouse is removed", type=int)
     args = parser.parse_args()
-    read_files(cwd, args.mouseID)
+
+
+    data_dir = cwd + '/data' + '/' + args.mouseID
+    print(data_dir)
+    read_files(data_dir, args.mouseID)
     save_full_csv(cwd, args.mouseID)
     save_ctrl_vs_treated(cwd, args.mouseID, args.mouse_out, args.mouse_return)
     data
