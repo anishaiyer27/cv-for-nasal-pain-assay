@@ -11,11 +11,11 @@ Author: Anisha Iyer
 
 import pandas as pd
 import numpy as np
-import glob, os
+import glob, os, argparse
 
 def read_files(root, mouse):
     os.chdir(root)
-    csv_files = glob.glob('*.csv')
+    csv_files = glob.glob('*'+mouse+'.csv')
     csv_files = sorted(list(csv_files))
     
     # only includes data csv files named based on starting second to ending second naming system
@@ -83,7 +83,13 @@ def save_ctrl_vs_treated2(root, mouse, vid1, frame_st, vid2, frame_click):
 if __name__=="__main__":
     cwd = os.getcwd()
     print(cwd)
-    read_files(cwd, 'MOUSE_A')
-    save_full_csv(cwd, 'MOUSE_A')
-    save_ctrl_vs_treated(cwd, 'MOUSE_A', 170, 240)
+
+    parser = argparse.ArgumentParser("merging script")
+    parser.add_argument("mouseID", help="ID associated with mouse", type=str)
+    parser.add_argument("mouse_out", help="End time of pre-treatment section. Time in seconds when mouse is removed", type=int)
+    parser.add_argument("mouse_return", help="Start of post-treatment section at time of click of chamber lid. Time in seconds when mouse is removed", type=int)
+    args = parser.parse_args()
+    read_files(cwd, args.mouseID)
+    save_full_csv(cwd, args.mouseID)
+    save_ctrl_vs_treated(cwd, args.mouseID, args.mouse_out, args.mouse_return)
     data
