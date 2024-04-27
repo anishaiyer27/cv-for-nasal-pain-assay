@@ -13,6 +13,9 @@ import pandas as pd
 import numpy as np
 import glob, os, argparse, sys
 
+global data
+data = pd.DataFrame()
+
 def read_files(root, mouse):
     os.chdir(root)
     csv_files = glob.glob('*'+mouse+'*.csv')
@@ -21,9 +24,6 @@ def read_files(root, mouse):
     # only includes data csv files named based on starting second to ending second naming system
     # does not remerge finished csv with original data files if this is run twice
     csv_files = [f for f in csv_files if f[:1].isdigit()]
-    
-    global data
-    data = pd.DataFrame()
 
     i=0
     last_ts = 0
@@ -52,9 +52,13 @@ def save_full_csv(root, mouse):
     output = mouse + '.csv'
     data.to_csv(output)
 
+def read_from_csv(root, mouse, st, click):
+    csv = root+"/"+mouse+".csv"
+    global data
+    data = pd.read_csv(csv)
+    save_ctrl_vs_treated(root, mouse, st, click)
 
 # merge all of them but separate across before and after treatment given timestamps for split
-    
 def save_ctrl_vs_treated(root, mouse, st, click):
     os.chdir(root)
     before = mouse + '_control.csv'
@@ -66,9 +70,7 @@ def save_ctrl_vs_treated(root, mouse, st, click):
     ctrl.to_csv(before)
     treated.to_csv(after)
 
-
 # merge all of them but separate across before and after treatment given vid # and frame #s
-
 def save_ctrl_vs_treated2(root, mouse, vid1, frame_st, vid2, frame_click):
     """
         Alternate helper method which reads in user friendly inputs. Get index numbers
@@ -91,14 +93,17 @@ if __name__=="__main__":
 
     parser = argparse.ArgumentParser("merging script")
     parser.add_argument("mouseID", help="ID associated with mouse", type=str)
-    #parser.add_argument("mouse_out", help="End time of pre-treatment section. Time in seconds when mouse is removed", type=int)
-    #parser.add_argument("mouse_return", help="Start of post-treatment section at time of click of chamber lid. Time in seconds when mouse is removed", type=int)
+    parser.add_argument("csv", help="Whether to read from CSV or data stream", type=bool)
+    parser.add_argument("mouse_out", help="End time of pre-treatment section. Time in seconds when mouse is removed", type=int)
+    parser.add_argument("mouse_return", help="Start of post-treatment section at time of click of chamber lid. Time in seconds when mouse is removed", type=int)
     args = parser.parse_args()
 
-
-    data_dir = cwd + '/data' + '/' + args.mouseID
-    print(data_dir)
-    read_files(data_dir, args.mouseID)
-    save_full_csv(cwd, args.mouseID)
-    #save_ctrl_vs_treated(cwd, args.mouseID, args.mouse_out, args.mouse_return)
-    data
+    if not args.csv:
+        data_dir = cwd + '/data' + '/' + args.mouseID
+        print(data_dir)
+        read_files(data_dir, args.mouseID)
+        save_full_csv(cwd, args.mouseID)
+        save_ctrl_vs_treated(cwd, args.mouseID, args.mouse_out, args.mouse_return)
+    else:
+        data_dir = cwd + '/results' + '/' + args.mouseID
+        read_from_csv(data_dir, args.mouseID, args.mouse_out, args.mouse_return)
