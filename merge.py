@@ -91,8 +91,8 @@ if __name__=="__main__":
 
     parser = argparse.ArgumentParser("merging script")
     parser.add_argument("mouseID", help="ID associated with mouse", type=str)
-    parser.add_argument("mouse_out", help="End time of pre-treatment section. Time in seconds when mouse is removed", type=int)
-    parser.add_argument("mouse_return", help="Start of post-treatment section at time of click of chamber lid. Time in seconds when mouse is removed", type=int)
+    #parser.add_argument("mouse_out", help="End time of pre-treatment section. Time in seconds when mouse is removed", type=int)
+    #parser.add_argument("mouse_return", help="Start of post-treatment section at time of click of chamber lid. Time in seconds when mouse is removed", type=int)
     args = parser.parse_args()
 
 
@@ -100,5 +100,5 @@ if __name__=="__main__":
     print(data_dir)
     read_files(data_dir, args.mouseID)
     save_full_csv(cwd, args.mouseID)
-    save_ctrl_vs_treated(cwd, args.mouseID, args.mouse_out, args.mouse_return)
+    #save_ctrl_vs_treated(cwd, args.mouseID, args.mouse_out, args.mouse_return)
     data
