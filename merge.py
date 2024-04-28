@@ -13,23 +13,35 @@ import pandas as pd
 import numpy as np
 import glob, os, argparse, sys
 
-global data
-data = pd.DataFrame()
-
 def read_files(root, mouse):
     os.chdir(root)
     csv_files = glob.glob('*'+mouse+'*.csv')
-    csv_files = sorted(list(csv_files))
+
+    all_starts = []
+
+    for f in csv_files:
+        splits = f.split("anishaiyer_")
+        if len(splits)==1:
+            splits = f.split("anishaiyer2_")
+        new_name = int(splits[1][:7].split("-")[0])
+        all_starts.append(new_name)
+    
+    encode = {i:st for st,i in list(enumerate(all_starts))}
+    all_starts = sorted(list(all_starts))
+    order = [encode[st] for st in all_starts]
+    ordered_files = [csv_files[o] for o in order]
     
     # only includes data csv files named based on starting second to ending second naming system
     # does not remerge finished csv with original data files if this is run twice
     csv_files = [f for f in csv_files if f[:1].isdigit()]
+    global data
+    data = pd.DataFrame()
 
     i=0
     last_ts = 0
     last_frame = 0
     expected_length = 0
-    for f in csv_files:
+    for f in ordered_files:
         df = pd.read_csv(f)
         print("read ", f, " as csv")
         df, last_ts, last_frame = adjust_indices(df, last_ts, last_frame)
@@ -37,7 +49,7 @@ def read_files(root, mouse):
         df.insert(0, "Interval", len(df.index.values)*["Clip " + str(i+1) + ": " + str(f)][:3])
         data = pd.concat([data, df])
         i += 1
-        
+    
     data.index = pd.Index(range(len(data.index)))
     print("expected length", expected_length)
     print("actual length", len(data.index.values))
@@ -93,15 +105,18 @@ if __name__=="__main__":
 
     parser = argparse.ArgumentParser("merging script")
     parser.add_argument("mouseID", help="ID associated with mouse", type=str)
-    parser.add_argument("csv", help="Whether to read from CSV or data stream", type=bool)
+    parser.add_argument("csv", help="Whether to read from CSV or data stream", type=str)
     parser.add_argument("mouse_out", help="End time of pre-treatment section. Time in seconds when mouse is removed", type=int)
     parser.add_argument("mouse_return", help="Start of post-treatment section at time of click of chamber lid. Time in seconds when mouse is removed", type=int)
     args = parser.parse_args()
 
-    if not args.csv:
+    if_csv = (args.csv == "True")
+
+    if not if_csv:
         data_dir = cwd + '/data' + '/' + args.mouseID
         print(data_dir)
         read_files(data_dir, args.mouseID)
+        print("completed")
         save_full_csv(cwd, args.mouseID)
         save_ctrl_vs_treated(cwd, args.mouseID, args.mouse_out, args.mouse_return)
     else:
