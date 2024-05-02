@@ -22,7 +22,10 @@ def read_files(root, mouse):
     for f in csv_files:
         splits = f.split("anishaiyer_")
         if len(splits)==1:
-            splits = f.split("anishaiyer2_")
+            if "anishaiyer2" in f:
+                splits = f.split("anishaiyer2_")
+            else:
+                splits = f.split("anishaiyer3_")
         new_name = int(splits[1][:7].split("-")[0])
         all_starts.append(new_name)
     
